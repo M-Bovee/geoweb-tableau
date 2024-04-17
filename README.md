@@ -1,1 +1,1 @@
-# geoweb-tableau
+# Tableau GeoWeb Integratie
