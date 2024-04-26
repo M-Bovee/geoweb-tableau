@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+</head>
+
+<body>
+    <div>
+
+        <body onclick="zoomToInitialViewpoint()">Zoom to initial viewpoint </button>
+    </div>
+
+
+    <script>
+
+        function zoomToInitialViewpoint() {
+            console.log("Clicked zoomToInitialViewpoint")
+            // parent.frames[0] is the same as document.getElementById("viewer").contentWindow.postMessage() without having to reference a ElementById
+            parent.frames[0].postMessage(
+                {
+                    id: "vertigis-web",
+                    type: "run-command",
+                    // Meerdere commands uitvoeren door ze in een list te zetten en mee te geven aan arguments, zie hieronder
+                    arguments: [
+                        {
+                            name: "map.zoom-to-initial-viewpoint",
+                        },
+
+                        {
+                            name: "ui.alert",
+                            arguments: {
+                                title: "Alert",
+                                message: "zoomToInitialViewpoint is aangeroepen",
+                                buttonText: "Ok",
+                                isDraggable: true,
+                                initialPosition: "center"
+                            }
+                        }
+                    ]
+                },
+                // WARNING: It's critical to specify an explicit target
+                // origin instead of "*" to avoid sending messages to a
+                // malicious origin. See
+                // https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage.
+                "*"
+            );
+        }
+
+
+    </script>
+</body>
+
+</html>
