@@ -19,7 +19,7 @@
 <body>
     <div class="navigation">
 
-        <body onclick="testPostMessage()">Send postMessage </button>
+        <body onclick="testPostMessage()">Gemeente </button>
     </div>
 
 
@@ -27,7 +27,10 @@
 
         function testPostMessage() {
             console.log("testPostMessage web API activit");
-            parent.frames[1].postMessage("hello world", "*");
+            parent.frames[1].postMessage(
+                {type: "nav", layout_id: "Wonen-gemeente-c30ee6c6-ac7a-4c60-ab44-34d7c584dedf"
+
+            }, "*");
         }
 
 
