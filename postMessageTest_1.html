@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
 
     <style>
-
         .navigation {
             background-color: #FFF0AA;
             font-family: Verdana;
@@ -25,11 +24,10 @@
 
     <script>
 
-function testPostMessage() {
-                const iframe = document.getElementById("viewer");
-                console.log("testPostMessage web API activit");
-                iframe.contentWindow.postMessage("hello world", "*");
-            }
+        function testPostMessage() {
+            console.log("testPostMessage web API activit");
+            parent.frames[1].postMessage("hello world", "*");
+        }
 
 
     </script>
