@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+</head>
+
+<body>
+    <div>
+
+        <body onclick="testPostMessage()">Send postMessage </button>
+    </div>
+
+
+    <script>
+
+function testPostMessage() {
+                const iframe = document.getElementById("viewer");
+                console.log("testPostMessage web API activit");
+                iframe.contentWindow.postMessage("hello world", "*");
+            }
+
+
+    </script>
+</body>
+
+</html>
