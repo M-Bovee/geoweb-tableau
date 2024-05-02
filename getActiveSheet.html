@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <!-- Importing the Tableau Embedding API Library. -->
+    <!-- Version 3.0.0 is the version corrosponding to Tableau 2021.4 which is used by Sweco -->
+   <!-- <script type="module" src="https://dashboards.obsurv.nl/javascripts/api/tableau.embedding.3.0.0.min.js"></script> -->
+
+    <style>
+        body {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            background-color: #FFF0AA;
+            height: 100vh;
+            font-family: Verdana;
+            font-size: 14px;
+            text-align: center;
+            line-height: 100vh;
+
+        }
+
+        :hover {
+            border: 1px solid black
+        }
+    </style>
+</head>
+
+<body>
+    <div class="navigation">
+
+        <body onclick="getActiveSheet()">Get active sheet </button>
+    </div>
+
+
+    <script>
+
+        function getActiveSheet() {
+            console.log("testPostMessage web API activit");
+            parent.postMessage("Hello world", "*");
+        }
+
+
+    </script>
+</body>
+
+</html>
