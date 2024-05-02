@@ -30,7 +30,7 @@
 <body>
     <div class="navigation">
 
-        <body onclick="getActiveView()">Get active view </button>
+        <body onclick="getActiveView()">Get active view 1 </button>
     </div>
 
 
@@ -39,7 +39,7 @@
         function getActiveView() {
             console.log("getActiveView pressed");
             let viz = window.parent;
-            console.log("viz" + viz)
+            //console.log("viz" + viz)
             //let view = viz.workbook.activeCustomView;
             //console.log(view)
             viz.postMessage("Hello world", "*");
