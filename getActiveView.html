@@ -40,9 +40,9 @@
             console.log("getActiveView pressed");
             let viz = window.parent;
             console.log("viz" + viz)
-            let view = viz.workbook.activeCustomView;
-            console.log(view)
-            //parent.postMessage("Hello world", "*");
+            //let view = viz.workbook.activeCustomView;
+            //console.log(view)
+            viz.postMessage("Hello world", "*");
         }
 
 
