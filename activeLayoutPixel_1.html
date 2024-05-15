@@ -8,12 +8,10 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #FFF0AA;
-            height: 100vh;
+            background-color: #FFDC78;
             font-family: Verdana;
-            font-size: 14px;
+            font-size: 8px;
             text-align: center;
-            line-height: 100vh;
 
         }
 
@@ -22,13 +20,13 @@
 
 <body>
     <div class="pixel">
-        <h1>2</h1>
+        <h1>3</h1>
     </div>
 
 
     <script>
         console.log("Functie niet aangeroepen")
-        window.onload = testPostMessage
+        parent.frames[1].onload = testPostMessage
 
         function testPostMessage() {
             console.log("testPostMessage web API activit");
