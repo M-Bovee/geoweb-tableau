@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <style>
+        body {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            background-color: #FFF0AA;
+            height: 100vh;
+            font-family: Verdana;
+            font-size: 14px;
+            text-align: center;
+            line-height: 100vh;
+
+        }
+
+        :hover {
+            border: 1px solid black
+        }
+    </style>
+</head>
+
+<body>
+    <div class="pixel">
+        <h1>1</h1>
+    </div>
+
+
+    <script>
+        consol.log("Functie niet aangeroepen")
+        window.onload = testPostMessage
+
+        function testPostMessage() {
+            console.log("testPostMessage web API activit");
+            parent.frames[1].postMessage(
+                {type: "nav", layout_id: "Wonen-gemeente-c30ee6c6-ac7a-4c60-ab44-34d7c584dedf"
+
+            }, "*");
+        }
+
+
+    </script>
+</body>
+
+</html>
+
