@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <!-- <meta http-equiv="Content-Security-Policy" content="frame-src 'self' https://*.gisict.nl https://*.obsurv.nl"> -->
+
+    <!-- Importing the Tableau Embedding API Library. -->
+    <!-- Version 3.0.0 is the version corrosponding to Tableau 2021.4 which is used by Sweco -->
+    <!-- <script type="module" src="https://dashboards.obsurv.nl/javascripts/api/tableau.embedding.3.0.0.min.js"></script> -->
+
+
+    <title>Tableau GeoWeb Integratie</title>
+
+    <style>
+        html {
+            box-sizing: border-box;
+
+            /* Auto centre website */
+            width: 1920px;
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 0;
+        }
+
+        body {
+            margin: 0;
+        }
+
+        .child {
+            height: 877px;
+            width: 100%;
+            background-color: #00325f;
+
+        }
+
+        .tableauPlaceholder {
+            float: left;
+            width: 1400px;
+        }
+
+        .viewerPlaceholder {
+            float: right;
+            height: 802px;
+            width: 520px;
+            padding-top: 40px;
+            margin-top: 35px;
+            background-color: #f0f0f0;
+
+        }
+
+        iframe {
+            height: 100%;
+            width: calc(100% - 10px);
+            padding-left: 10px;
+
+            flex-grow: 1;
+            border: none;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <!-- Load the Tableau Embedding API. -->
+    <script type="module" src="https://public.tableau.com/javascripts/api/tableau.embedding.3.latest.js"></script>
+
+    <!-- The embedded Dashboard and GeoWeb Viewer go here. -->
+    <div class="child">
+
+        <!-- Use this div for styling the Dashboard container. -->
+        <div class='tableauPlaceholder' id="tableauPlaceholder">
+
+            <!-- Create the tableau-viz object (https://help.tableau.com/current/api/embedding_api/en-us/docs/embedding_api_basic.html).
+            Copy the link of the Dashboard you want to embed from Tableau Public using the share button. Don't use the embed code, it doesn't seem to work with this method of adding event listeners 
+            (https://help.tableau.com/current/api/embedding_api/en-us/docs/embedding_api_event.html). -->
+            <tableau-viz id="tableauViz"
+                src='https://public.tableau.com/views/PNH_OV-knooppunten_Dashboard_GeoWeb_Integratie/2_Overzicht-ovk'
+                onFirstInteractive="handleFirstInteractive" onTabSwitched="handleTabSwitch"
+                onFilterChanged="handleFilterChange" onParameterChanged="handleParameterChange">
+            </tableau-viz>
+        </div>
+
+        <!-- Use this div for styling the Viewer container. -->
+        <div class="viewerPlaceholder" id="viewerPlaceholder">
+
+            <!-- Embed the GeoWeb Viewer by copying the app url and adding &isEmbedded=true. -->
+            <iframe id="viewer"
+                src="https://swecostudent.geowebonline.nl/vertigisstudio/web/?app=31f3c007c8d8472b9edb3d5381c4ce9c&isEmbedded=true"></iframe>
+        </div>
+
+    </div>
+
+    <script>
+
+        // Declare global variables
+        let tableauContainer = document.getElementById("tableauPlaceholder");
+        let viewerContainer = document.getElementById("viewerPlaceholder");
+        let viewer = document.getElementById("viewer");
+        let activeWorkSheetName = "";
+
+
+
+
+        // Add an event listener to the webpage
+        window.addEventListener("message", (message) => {
+
+            // Define the domain of the GeoWeb Viewer
+            let viewerDomain = "https://swecostudent.geowebonline.nl";
+
+            // Only handle messages originating from the GeoWeb Viewer domain
+            if (message.origin == viewerDomain) {
+                console.log("Received a message from Web", message.data);
+
+                // Handle the message
+                handleMessageFromViewer(message.data)
+            };
+        });
+
+
+
+
+        // An event raised when the Viz object first becomes interactive. This is only raised once.
+        //* @param {object} e - The event object resulted from the becoming first interactive event.
+        async function handleFirstInteractive(e) {
+            console.log("---handleFirstInteractive---");
+            console.log("Viz Embedding Successful!");
+
+            // Retrieve the active sheet name.
+            activeWorkSheetName = getActiveWorkSheetName(e);
+
+            // Remap the active sheet name to the corrosponding GeoWeb layout ID.
+            let geowebLayoutID = getGeowebLayoutID(activeWorkSheetName)
+            console.log(`GeoWeb Layout: ${geowebLayoutID}.`);
+
+            // Format and send the message that will initialize the switch layout command in GeoWeb Workflow Designer.
+            let message = { type: "nav", layout_id: geowebLayoutID }
+            sendPostMessage(message)
+
+        }
+
+
+        // Formats the postMessage to be send to the GeoWeb Viewer after an tab switch event has occured.
+        //* @param {object} e - The event object resulted from the tab switch event.
+        async function handleTabSwitch(e) {
+
+            // Retrieve the active worksheet name.
+            activeWorkSheetName = getActiveWorkSheetName(e);
+            console.log("---handleTabSwitch---");
+            console.log(`Tab switched to ${activeWorkSheetName}.`);
+
+            // Remap the active worksheet name to the corrosponding GeoWeb layout ID.
+            let geowebLayoutID = getGeowebLayoutID(activeWorkSheetName);
+            console.log(`Loading GeoWeb Layout: ${geowebLayoutID}.`);
+
+            //  Don't send a message to the viewer and hide viewer for an active sheet that doesn't have a layout ("nvt")
+            if (geowebLayoutID == "nvt") {
+                // Hide the viewer
+                viewer.style.visibility = "hidden";
+
+
+            } else if (geowebLayoutID == "Viewer-f5c571e9-0a57-48d2-a2ec-7ac04fc57fac") {
+                // Hide the dashboard
+                tableauContainer.style.display = "none";
+
+                // Make the viewer visable again and fit to the whole webpage
+                viewer.style.visibility = "visible";
+                viewerContainer.style.margin = "0";
+                viewerContainer.style.padding = "0";
+                viewerContainer.style.width = "100%";
+                viewerContainer.style.height = "100%";
+
+                // Format and send the message that will initialize the switch layout command in GeoWeb Workflow Designer.
+                let message = { type: "nav", layout_id: geowebLayoutID };
+                sendPostMessage(message);
+
+
+            } else {
+                // Make the viewer visable again
+                viewer.style.visibility = "visible";
+
+                tableauContainer.style.width = "1400px";
+                viewerContainer.style.width = "520px";
+
+                // Format and send the message that will initialize the switch layout command in GeoWeb Workflow Designer.
+                let message = { type: "nav", layout_id: geowebLayoutID };
+                sendPostMessage(message);
+            }
+        }
+
+
+        // Retrieve the active worksheet name
+        //* @param {object} e - The event object resulted from the event.
+        //* @returns {string} - The worksheet name corrosponding to the active worksheet.
+        function getActiveWorkSheetName(e) {
+            let viz = e.target;
+            let activeWorkSheetName = viz.workbook.activeSheet.name;
+            return activeWorkSheetName
+        }
+
+
+
+        // An event raised after a filter has a changed state. 
+        //* @param {object} e - The event object resulted from the filter change event.
+        async function handleFilterChange(e) {
+            console.log("handleFilterChange triggered")
+            // Example that shows getting the viz object from the tab switch event.
+            //console.log(e.detail)
+            //console.log(activeWorkSheetName)
+            // let eventDetails = e.detail
+
+            // console.log(eventDetails.sheet.name)
+            let filterChanged = await e.detail.getFilterAsync();
+            let fieldName = filterChanged.fieldName
+            //console.log(fieldName)
+            //console.log(filterChanged.worksheetName)
+
+
+
+            console.log("---handleFilterChange---");
+            //console.log(filterValues)
+
+            // filterChanged.appliedValues returns an array with DataValues (https://help.tableau.com/current/api/embedding_api/en-us/reference/interfaces/datavalue.html)
+            let filterDataArray = filterChanged.appliedValues;
+
+            // Unpack the DataValues to its value property and write the values to an array.
+            let filterValues = [];
+            for (let i = 0; i < filterDataArray.length; i++) {
+                filterValues.push(filterDataArray[i].value);
+            }
+            console.log(filterValues);
+
+
+            // Handle filter corrosponding to the field "naam"
+            if (fieldName == "naam") {
+
+
+
+                if (activeWorkSheetName.endsWith("ovk")) {
+                    console.log("Ends with ovk")
+                    let message = { type: "checkbox", filter_variant: "ovk", filter_values: filterValues };
+                    //sendPostMessage(message);
+
+                } else if (activeWorkSheetName.endsWith("gemeente")) {
+                    console.log("Ends with gemeente")
+                    let message = { type: "checkbox", filter_variant: "gemeente", filter_values: filterValues };
+
+                    //sendPostMessage(message);
+
+
+                } else if (activeWorkSheetName.endsWith("corridor")) {
+                    console.log("Ends with corridor")
+
+                }
+
+                // Handle filter corrosponding to the field "invloedsgebied"
+            } else if (fieldName == "invloedsgebied") {
+
+                // // Format and send the message that will initialize the switch layout command in GeoWeb Workflow Designer.
+                let message = { type: "radiobutton", filter_values: filterValues };
+                sendPostMessage(message);
+
+            }
+
+            // setTimeout(function(){
+
+
+            //     }}, 4000);
+
+
+
+            // Format and send the message that will initialize the switch layout command in GeoWeb Workflow Designer.
+            // let message = { type: "checkbox", filter_values: filterValues};
+            //     sendPostMessage(message);
+
+
+
+            //let viz = e.target;
+            //let activeWorkSheetName = viz.workbook.activeSheet.name;
+
+            //console.log(viz.workbook.activeSheet.getFilterAsync())
+            //let filterChanged = await e.detail.getFilterAsync();
+            //console.log(await e.detail.sheet);
+            //             console.log(activeWorkSheetName)
+            // console.log(filterChanged.worksheetName)
+            //             if (filterChanged.worksheetName == activeWorkSheetName){
+            //                 console.log("tRUE")
+            //             } else {
+            //                 console.log("fALSE")
+            //             }
+
+            //let filterChanged = await e.detail;
+
+
+            // console.log(filterDataArray)
+            // console.log(filterValues);
+        }
+
+
+        // Retrieves the GeoWeb layoutID based on the given currentSheet.
+        //* @param {string} currentSheet - The current sheet name.
+        //* @returns {string} - The corresponding GeoWeb layoutID.
+        function getGeowebLayoutID(currentSheet) {
+
+            // Create an array with tableauSheetNames and corrosponding GeoWeb layoutID for each sheet in the Dashboard.
+            let remapArray = {
+                "0. Introductie": { tableauSheetName: "0. Introductie", layoutID: "nvt" },
+                "2. Overzicht-ovk": { tableauSheetName: "2. Overzicht-ovk", layoutID: "Overzicht-ovk-65e9bd2e-cbe7-43a6-b446-d0f60cc4b217" },
+                "2. Overzicht-gemeente": { tableauSheetName: "2. Overzicht-gemeente", layoutID: "Overzicht-gemeente-4cb3e619-450a-4760-820c-bd7d2d93af2f" },
+                "2. Overzicht-corridor": { tableauSheetName: "2. Overzicht-corridor", layoutID: "Overzicht-corridor-8630f500-5f77-4e6b-9572-2f62081f594f" },
+                "3. Wonen-ovk": { tableauSheetName: "3. Wonen-ovk", layoutID: "Wonen-ovk-88c13917-f385-455d-84cb-801ef9c4170c" },
+                "3. Wonen-gemeente": { tableauSheetName: "3. Wonen-gemeente", layoutID: "Wonen-gemeente-c30ee6c6-ac7a-4c60-ab44-34d7c584dedf" },
+                "3. Wonen-corridor": { tableauSheetName: "3. Wonen-corridor", layoutID: "Wonen-corridor-197640b9-789d-42da-9f5e-f33503186db9" },
+                "4. Werken-ovk": { tableauSheetName: "4. Werken-ovk", layoutID: "Werken-ovk-58a4c8c2-372b-4596-84d6-23d722cfc639" },
+                "4. Werken-gemeente": { tableauSheetName: "4. Werken-gemeente", layoutID: "Werken-gemeente-f31ed019-577e-4f01-86cf-4f2ef176be15" },
+                "4. Werken-corridor": { tableauSheetName: "4. Werken-corridor", layoutID: "Werken-corridor-850c1d28-2cc6-4dbe-9acc-eb002e0f7892" },
+                "5. Mobiliteit-ovk": { tableauSheetName: "5. Mobiliteit-ovk", layoutID: "Mobiliteit-ovk-0bfb9ef7-e772-405f-bb9a-c416f1b16d8a" },
+                "5. Mobiliteit-gemeente": { tableauSheetName: "5. Mobiliteit-gemeente", layoutID: "Mobiliteit-gemeente-c0dacc0f-30b0-4066-accf-5da315580f3d" },
+                "5. Mobiliteit-corridor": { tableauSheetName: "5. Mobiliteit-corridor", layoutID: "Mobiliteit-corridor-dc7ef686-8f21-490d-a2c3-7ce93c26dc3f" },
+                "6. Viewer": { tableauSheetName: "6. Viewer", layoutID: "Viewer-f5c571e9-0a57-48d2-a2ec-7ac04fc57fac" },
+                "7. Downloads": { tableauSheetName: "7. Downloads", layoutID: "nvt" },
+            }
+
+            // Iterate through the remapArray to find a matching layoutID.
+            let geowebLayoutID = "";
+            for (let key in remapArray) {
+                if (remapArray[key].tableauSheetName === currentSheet) {
+                    geowebLayoutID = remapArray[key].layoutID;
+                    break;
+                }
+            }
+            return geowebLayoutID;
+        }
+
+
+        // Sends a postMessage to the GeoWeb Viewer.
+        //* @param {object} message - The message to be send using postMessage.
+        function sendPostMessage(message) {
+            // Send a message to the viewer using postMessage.
+            viewer.contentWindow.postMessage(message, "*");
+        }
+
+        // Handles the messages send from the GeoWeb Viewer
+        //* @param {string} message - The message received from the GeoWeb Viewer.
+        function handleMessageFromViewer(message) {
+            if (message == "Maximize Viewer") {
+                // Hide the dashboard
+                tableauContainer.style.display = "none";
+
+                // Make the viewer fit to the whole webpage
+                viewer.style.visibility = "visible";
+                viewerContainer.style.margin = "0";
+                viewerContainer.style.padding = "0";
+                viewerContainer.style.width = "100%";
+                viewerContainer.style.height = "100%";
+
+            } else if (message == "Minimize Viewer") {
+                // Show the Dashboard
+                tableauContainer.style.display = "inline";
+
+                // Reset the styling to the default values
+                viewer.style.visibility = "visible";
+                viewerContainer.style.marginTop = "35px";
+                viewerContainer.style.paddingTop = "40px";
+                viewerContainer.style.width = "520px";
+                viewerContainer.style.height = "802px";
+
+            } else if (message == "Close Viewer") {
+                // Set the styling to hide the viewer
+                viewer.style.visibility = "hidden";
+                viewerContainer.style.width = "520px";
+
+                // Show the Dashboard
+                tableauContainer.style.display = "inline";
+
+            } else {
+                console.log("Message from Viewer not supported")
+
+            };
+        }
+
+
+
+
+        // An event raised after a filter has a changed state. 
+        async function handleParameterChange(e) {
+            // Example that shows getting the viz object from the tab switch event.
+            let parameterChanged = await e.detail;
+
+            // filterChanged.appliedValues returns an array with DataValues (https://help.tableau.com/current/api/embedding_api/en-us/reference/interfaces/datavalue.html)
+            //let parameterValue = parameterChanged.currentValue;
+
+            console.log("---handleParameterChange---");
+            console.log(parameterChanged)
+        }
+
+        // const vizu = document.querySelector("tableauViz");
+        // const work = vizu.activeSheet.name;
+        // console.log(work)
+
+    </script>
+
+
+</body>
