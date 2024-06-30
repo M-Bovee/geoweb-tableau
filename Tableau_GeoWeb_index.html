@@ -121,7 +121,7 @@
 
 
 
-        // An event raised when the Viz object first becomes interactive. This is only raised once.
+        // An event raised when the Viz object first becomes interactive. Sets the active worksheet name.
         //* @param {object} e - The event object resulted from the becoming first interactive event.
         async function handleFirstInteractive(e) {
             console.log("---handleFirstInteractive---");
@@ -129,15 +129,6 @@
 
             // Retrieve the active sheet name.
             activeWorkSheetName = getActiveWorkSheetName(e);
-
-            // Remap the active sheet name to the corrosponding GeoWeb layout ID.
-            let geowebLayoutID = getGeowebLayoutID(activeWorkSheetName)
-            console.log(`GeoWeb Layout: ${geowebLayoutID}.`);
-
-            // Format and send the message that will initialize the switch layout command in GeoWeb Workflow Designer.
-            let message = { type: "nav", layout_id: geowebLayoutID }
-            sendPostMessage(message)
-
         }
 
 
@@ -160,6 +151,7 @@
                 viewer.style.visibility = "hidden";
 
 
+                // Hide the Dashboard and make the viewer fit the whole webpage
             } else if (geowebLayoutID == "Viewer-f5c571e9-0a57-48d2-a2ec-7ac04fc57fac") {
                 // Hide the dashboard
                 tableauContainer.style.display = "none";
@@ -175,7 +167,7 @@
                 let message = { type: "nav", layout_id: geowebLayoutID };
                 sendPostMessage(message);
 
-
+                // 
             } else {
                 // Make the viewer visable again
                 viewer.style.visibility = "visible";
@@ -234,13 +226,13 @@
 
             // Handle filter corrosponding to the field "naam"
             if (fieldName == "naam") {
-
+                console.log("fieldName = naam")
 
 
                 if (activeWorkSheetName.endsWith("ovk")) {
                     console.log("Ends with ovk")
                     let message = { type: "checkbox", filter_variant: "ovk", filter_values: filterValues };
-                    //sendPostMessage(message);
+                    sendPostMessage(message);
 
                 } else if (activeWorkSheetName.endsWith("gemeente")) {
                     console.log("Ends with gemeente")
@@ -252,10 +244,18 @@
                 } else if (activeWorkSheetName.endsWith("corridor")) {
                     console.log("Ends with corridor")
 
+                    // Remap the corridorvalue from the Tableau filter to a matching corridor name value from the webmap.
+                    let geowebCorridorValue = remapCorridors(filterValues[0])
+
+                    let message = { type: "checkbox", filter_variant: "corridor", filter_values: geowebCorridorValue };
+
+                    sendPostMessage(message);
+
                 }
 
                 // Handle filter corrosponding to the field "invloedsgebied"
             } else if (fieldName == "invloedsgebied") {
+                console.log("fieldName = invloedsgebied")
 
                 // // Format and send the message that will initialize the switch layout command in GeoWeb Workflow Designer.
                 let message = { type: "radiobutton", filter_values: filterValues };
@@ -334,6 +334,9 @@
         }
 
 
+
+
+
         // Sends a postMessage to the GeoWeb Viewer.
         //* @param {object} message - The message to be send using postMessage.
         function sendPostMessage(message) {
@@ -380,6 +383,34 @@
             };
         }
 
+        // Retrieves the GeoWeb layoutID based on the given currentSheet.
+        //* @param {string} currentSheet - The current sheet name.
+        //* @returns {string} - The corresponding GeoWeb layoutID.
+        function remapCorridors(corridorValue) {
+            console.log("RemapCorridors")
+
+            // Create an array with tableauSheetNames and corrosponding GeoWeb layoutID for each sheet in the Dashboard.
+            let remapArray = {
+                "Gooicorridor": { corridorValueTableau: "Gooicorridor", corridorValueMap: "Gooi-corridor,Gooi-corridor2" },
+                "Helderse lijn": { corridorValueTableau: "Helderse lijn", corridorValueMap: "Alkmaar-Den Helder" },
+                "Hoornse lijn": { corridorValueTableau: "Hoornse lijn", corridorValueMap: "HEERHUGOWAARD - HOORN" },
+                "Zaancorridor": { corridorValueTableau: "Zaancorridor", corridorValueMap: "Zaan-corridor" },
+                "OV-knooppunten IJmond/Zuid-Kennemerland": { corridorValueTableau: "OV-knooppunten IJmond/Zuid-Kennemerland", corridorValueMap: "Zuid-Kennemerland,Kennemerlijn" },
+                "West-Friese lijn": { corridorValueTableau: "West-Friese lijn", corridorValueMap: "Amsterdam-Enkhuizen" }
+            }
+
+             // Iterate through the remapArray to find a matching layoutID.
+            let geowebCorridorValue = "";
+            for (let key in remapArray) {
+                if (remapArray[key].corridorValueTableau === corridorValue) {
+                    geowebCorridorValue = remapArray[key].corridorValueMap;
+                    break;
+                }
+            }
+
+            console.log(geowebCorridorValue)
+            return geowebCorridorValue;
+        }
 
 
 
